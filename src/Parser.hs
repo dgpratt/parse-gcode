@@ -5,11 +5,11 @@ module Parser (parseProgram) where
 import Control.Applicative hiding (many, some)
 import Data.Text ( Text )
 import Data.Void ( Void )
-import Data.Char ( isPrint )
+import Data.Char ( isPrint, toUpper )
 
 import Text.Megaparsec
-import Text.Megaparsec.Char ( char, char', eol, hspace, space, string, string' )
-import Text.Megaparsec.Char.Lexer (signed, decimal)
+import Text.Megaparsec.Char ( char, char', eol, hspace )
+import qualified Text.Megaparsec.Char.Lexer as L
 import Control.Monad.Combinators.Expr ( makeExprParser, Operator(InfixL) )
 
 import Data
@@ -19,34 +19,43 @@ type Parser = Parsec Void Text
 parseProgram :: String -> Text -> Either (ParseErrorBundle Text Void) [Line]
 parseProgram = runParser program
 
+sc :: Parser ()
+sc = hspace
+
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+symbol :: Text -> Parser Text
+symbol = L.symbol' sc
+
 brackets :: Parser a -> Parser a
-brackets p = char '[' *> p <* char ']'
+brackets = between (symbol "[") (symbol "]")
 
 parens :: Parser a -> Parser a
-parens p = char '(' *> p <* char ')'
+parens = between (symbol "(") (symbol ")")
 
 program :: Parser [Line]
 program = manyTill line eof <?> "program"
 
 line :: Parser Line
 line = Line
-    <$> option False (True <$ char '/') <* hspace
-    <*> optional line_number <* hspace
+    <$> option False (True <$ symbol "/")
+    <*> optional line_number
     <*> segment `sepBy` hspace
     <* optional eol
     <?> "line"
 
 line_number :: Parser Int
-line_number = char' 'N' *> decimal <?> "line number"
+line_number = symbol "N" *> lexeme L.decimal <?> "line number"
 
 segment :: Parser Segment
 segment =  choice [comment, mid_line_word, parameter_setting] <?> "segment"
 
 mid_line_word :: Parser Segment
-mid_line_word = Word <$> (mid_line_letter <* hspace) <*> real_value <?> "word"
+mid_line_word = Word <$> (lexeme mid_line_letter) <*> real_value <?> "word"
 
 arc_tangent_combo :: Parser RealExpr
-arc_tangent_combo = Atan <$> (string' "ATAN" *> expression) <*> (string "/" *> expression) <?> "arctan expression"
+arc_tangent_combo = Atan <$> (symbol "ATAN" *> expression) <*> (symbol "/" *> expression) <?> "arctan expression"
 
 comment :: Parser Segment
 comment = (Comment <$> ordinary_comment) <|> (Message <$> message) <?> "comment"
@@ -56,47 +65,43 @@ comment_characters = takeWhileP Nothing (\c -> isPrint c && not (c `elem` ['(', 
 
 parameter_setting :: Parser Segment
 parameter_setting = ParameterSetting <$> ix <*> value <?> "parameter setting"
-    where ix = char '#' *> parameter_index
-          value = char '=' *> hspace *> real_value
+    where ix = symbol "#" *> parameter_index
+          value = symbol "=" *> real_value
 
 parameter_index :: Parser RealExpr
-parameter_index = real_value <?> "parameter index"
+parameter_index = lexeme real_value <?> "parameter index"
 
 message :: Parser Text
 message = parens $ do
-    hspace
-    char' 'M'
-    hspace
-    char' 'S'
-    hspace
-    char' 'G'
-    hspace
-    char ','
+    symbol "M"
+    symbol "S"
+    symbol "G"
+    symbol ","
     comment_characters <?> "message"
 
 mid_line_letter :: Parser Char
-mid_line_letter = choice (map char' ['A','B','C','D','F','G','H','I','J','K','L','M','P','Q','R','S','T','X','Y','Z'])
+mid_line_letter = satisfy ((`elem` ['A','B','C','D','F','G','H','I','J','K','L','M','P','Q','R','S','T','X','Y','Z']) . toUpper)
 
 ordinary_comment :: Parser Text
 ordinary_comment = parens comment_characters
 
 parameter_value :: Parser RealExpr
-parameter_value =  char '#' *> (Param <$> parameter_index) <?> "parameter value"
+parameter_value =  symbol "#" *> (Param <$> parameter_index) <?> "parameter value"
 
 real_number :: Parser RealExpr
-real_number = Value <$> n <?> "real number"
+real_number = Value <$> lexeme n <?> "real number"
     where sign = (id <$ char '+') <|> (negate <$ char '-')
-          n = (,) <$> (option id sign <*> decimal) <*> f
-          f = option 0 (char '.' *> decimal)
+          n = (,) <$> (option id sign <*> L.decimal) <*> f
+          f = option 0 (char '.' *> L.decimal)
           
 real_value :: Parser RealExpr
-real_value =  choice [real_number, expression, parameter_value, unary_combo] <* hspace <?> "real value"
+real_value =  choice [real_number, expression, parameter_value, unary_combo] <?> "real value"
 
 unary_combo :: Parser RealExpr
 unary_combo = choice [ordinary_unary_combo, arc_tangent_combo] <?> "unary expression"
 
 expression :: Parser RealExpr
-expression = brackets (makeExprParser real_value binaryOpTable) <* hspace <?> "expression"
+expression = brackets (makeExprParser real_value binaryOpTable) <?> "expression"
 
 binaryOpTable :: [[Operator Parser RealExpr]]
 binaryOpTable = [ [ binary  "**"   Power ]
@@ -110,7 +115,7 @@ binaryOpTable = [ [ binary  "**"   Power ]
                   , binary  "-"    Subtract ] ]
 
 binary :: Text -> (RealExpr -> RealExpr -> RealExpr) -> Operator Parser RealExpr
-binary name f = InfixL (f <$ string' name <* hspace)
+binary name f = InfixL (f <$ symbol name)
 
 ordinary_unary_combo :: Parser RealExpr
 ordinary_unary_combo = choice [ unary "ABS" Abs
@@ -127,4 +132,4 @@ ordinary_unary_combo = choice [ unary "ABS" Abs
                               , unary "TAN" Tan ]
 
 unary :: Text -> (RealExpr -> RealExpr) -> Parser RealExpr
-unary name f = f <$> (string' name *> expression)
+unary name f = f <$> (symbol name *> expression)
