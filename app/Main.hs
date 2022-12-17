@@ -3,6 +3,7 @@ module Main where
 import System.Environment (getArgs)
 import qualified Data.Text.IO as T
 import Parser (parseProgram)
+import Print (printProgram)
 
 import Text.Megaparsec (errorBundlePretty)
 
@@ -13,5 +14,5 @@ main = do
   let parseResult = parseProgram inputFilePath inputFile
   case parseResult of
     Left e -> putStrLn $ errorBundlePretty e
-    Right r -> mapM_ (print . show) r -- putStrLn $ show r
+    Right r -> putStrLn $ printProgram r
   return ()
