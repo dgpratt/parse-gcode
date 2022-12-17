@@ -13,5 +13,5 @@ main = do
   let parseResult = parseProgram inputFilePath inputFile
   case parseResult of
     Left e -> putStrLn $ errorBundlePretty e
-    Right r -> putStrLn $ show r
+    Right r -> mapM_ (print . show) r -- putStrLn $ show r
   return ()
