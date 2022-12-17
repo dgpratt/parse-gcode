@@ -17,7 +17,7 @@ import Data
 type Parser = Parsec Void Text
 
 parseProgram :: String -> Text -> Either (ParseErrorBundle Text Void) [Line]
-parseProgram n t = runParser program n t
+parseProgram = runParser program
 
 brackets :: Parser a -> Parser a
 brackets p = char '[' *> p <* char ']'
@@ -43,7 +43,7 @@ segment :: Parser Segment
 segment =  choice [comment, mid_line_word, parameter_setting] <?> "segment"
 
 mid_line_word :: Parser Segment
-mid_line_word = Word <$> (mid_line_letter <* space) <*> real_value <?> "word"
+mid_line_word = Word <$> (mid_line_letter <* hspace) <*> real_value <?> "word"
 
 arc_tangent_combo :: Parser RealExpr
 arc_tangent_combo = Atan <$> (string' "ATAN" *> expression) <*> (string "/" *> expression) <?> "arctan expression"
@@ -57,20 +57,20 @@ comment_characters = takeWhileP Nothing (\c -> isPrint c && not (c `elem` ['(', 
 parameter_setting :: Parser Segment
 parameter_setting = ParameterSetting <$> ix <*> value <?> "parameter setting"
     where ix = char '#' *> parameter_index
-          value = char '=' *> real_value
+          value = char '=' *> hspace *> real_value
 
 parameter_index :: Parser RealExpr
 parameter_index = real_value <?> "parameter index"
 
 message :: Parser Text
 message = parens $ do
-    space
+    hspace
     char' 'M'
-    space
+    hspace
     char' 'S'
-    space
+    hspace
     char' 'G'
-    space
+    hspace
     char ','
     comment_characters <?> "message"
 
@@ -81,7 +81,7 @@ ordinary_comment :: Parser Text
 ordinary_comment = parens comment_characters
 
 parameter_value :: Parser RealExpr
-parameter_value =  char '#' *> (Param <$> expression) <?> "parameter value"
+parameter_value =  char '#' *> (Param <$> parameter_index) <?> "parameter value"
 
 real_number :: Parser RealExpr
 real_number = Value <$> n <?> "real number"
@@ -90,13 +90,13 @@ real_number = Value <$> n <?> "real number"
           f = option 0 (char '.' *> decimal)
           
 real_value :: Parser RealExpr
-real_value =  choice [real_number, expression, parameter_value, unary_combo] <* space <?> "real value"
+real_value =  choice [real_number, expression, parameter_value, unary_combo] <* hspace <?> "real value"
 
 unary_combo :: Parser RealExpr
 unary_combo = choice [ordinary_unary_combo, arc_tangent_combo] <?> "unary expression"
 
 expression :: Parser RealExpr
-expression = brackets (makeExprParser real_value binaryOpTable) <?> "expression"
+expression = brackets (makeExprParser real_value binaryOpTable) <* hspace <?> "expression"
 
 binaryOpTable :: [[Operator Parser RealExpr]]
 binaryOpTable = [ [ binary  "**"   Power ]
@@ -110,7 +110,7 @@ binaryOpTable = [ [ binary  "**"   Power ]
                   , binary  "-"    Subtract ] ]
 
 binary :: Text -> (RealExpr -> RealExpr -> RealExpr) -> Operator Parser RealExpr
-binary name f = InfixL (f <$ string' name <* space)
+binary name f = InfixL (f <$ string' name <* hspace)
 
 ordinary_unary_combo :: Parser RealExpr
 ordinary_unary_combo = choice [ unary "ABS" Abs
