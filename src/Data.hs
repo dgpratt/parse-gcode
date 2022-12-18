@@ -28,7 +28,11 @@ data Expr v = Value v
             | Subtract (Expr v) (Expr v)
             deriving (Show, Eq)
 
-data RN = RN Integer Int deriving (Show, Eq)
+data RN = RN Integer Int deriving (Show)
+
+instance Eq RN where
+    (RN 0 _) == (RN 0 _)   = True
+    (RN d e) == (RN d' e') = d == d' && e == e'
 
 type RealExpr = Expr RN
 
