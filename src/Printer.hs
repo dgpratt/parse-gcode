@@ -1,18 +1,27 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Print (printProgram) where
+module Printer (printProgram, printParseResult) where
 
 import Data
-import Data.List ( intercalate ) 
+import Data.List ( intercalate, splitAt ) 
 import Data.Text ( unpack )
+
+import Data.Text ( Text )
+import Data.Void ( Void )
+import Text.Megaparsec (errorBundlePretty)
+import Text.Megaparsec.Error (ParseErrorBundle)
 
 printProgram :: [Line] -> String
 printProgram = unlines . map printLine
 
+printParseResult :: Either (ParseErrorBundle Text Void) [Line] -> String
+printParseResult (Left e) = errorBundlePretty e
+printParseResult (Right r) = printProgram r
+
 printLine :: Line -> String
 printLine Line {..} = bd ++ ln ++ segs
     where bd = (if blockDelete then "/" else "")
-          ln = maybe "" (\n -> "N" ++ show n ++ " ") lineNumber
+          ln = maybe "" (\n -> "N" ++ padLeft '0' 4 (show n) ++ " ") lineNumber
           segs = intercalate " " (map printSegment segments)
 
 printSegment :: Segment -> String
@@ -51,7 +60,15 @@ printExpr = prt where
     prt (Add l r)   = op "+" l r
     prt (Subtract l r) = op "-" l r
 
-printRealNumber :: RealNumber -> String
-printRealNumber (w, 0) = show w
-printRealNumber (0, f) = "." ++ show f
-printRealNumber (w, f) = show w ++ "." ++ show f
+printRealNumber :: RN -> String
+printRealNumber (RN 0 _)         = "0"
+printRealNumber (RN d 0)         = show d
+printRealNumber (RN d e) | d < 0 = "-" ++ printRealNumber (RN (-d) e)
+printRealNumber (RN d e)         =
+    if p == 0 then "0." ++ r else l ++ "." ++ r
+    where s     = show d
+          p     = (length s) + e
+          (l,r) = splitAt p s
+
+padLeft :: a -> Int -> [a] -> [a]
+padLeft c n s = replicate (n - length s) c ++ s

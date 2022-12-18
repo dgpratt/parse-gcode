@@ -1,4 +1,4 @@
-module Data (Expr (..), RealNumber, RealExpr, Line (..), Segment (..)) where
+module Data (Expr (..), RN (..), RealExpr, Line (..), Segment (..)) where
 
 import Data.Text ( Text )
 
@@ -26,16 +26,16 @@ data Expr v = Value v
             | Xor (Expr v) (Expr v)
             | Add (Expr v) (Expr v)
             | Subtract (Expr v) (Expr v)
-            deriving Show
+            deriving (Show, Eq)
 
-type RealNumber = (Int, Int)
+data RN = RN Integer Int deriving (Show, Eq)
 
-type RealExpr = Expr RealNumber
+type RealExpr = Expr RN
 
-data Line = Line { blockDelete :: Bool, lineNumber :: Maybe Int, segments :: [Segment] } deriving Show
+data Line = Line { blockDelete :: Bool, lineNumber :: Maybe Int, segments :: [Segment] } deriving  (Show, Eq)
 
 data Segment = Word Char RealExpr
              | Comment Text
              | Message Text
              | ParameterSetting RealExpr RealExpr
-             deriving Show
+             deriving  (Show, Eq)

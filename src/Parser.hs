@@ -3,9 +3,9 @@
 module Parser (parseProgram) where
 
 import Control.Applicative hiding (many, some)
-import Data.Text ( Text )
+import Data.Text ( Text, foldl' )
 import Data.Void ( Void )
-import Data.Char ( isPrint, toUpper )
+import Data.Char ( isPrint, toUpper, isDigit, digitToInt )
 
 import Text.Megaparsec
 import Text.Megaparsec.Char ( char, char', eol, hspace )
@@ -88,14 +88,11 @@ ordinary_comment = parens comment_characters
 parameter_value :: Parser RealExpr
 parameter_value =  symbol "#" *> (Param <$> parameter_index) <?> "parameter value"
 
-real_number :: Parser RealExpr
-real_number = Value <$> lexeme n <?> "real number"
-    where sign = (id <$ char '+') <|> (negate <$ char '-')
-          n = (,) <$> (option id sign <*> L.decimal) <*> f
-          f = option 0 (char '.' *> L.decimal)
+real_number_expr :: Parser RealExpr
+real_number_expr = Value <$> lexeme real_number' <?> "real number"
           
 real_value :: Parser RealExpr
-real_value =  choice [real_number, expression, parameter_value, unary_combo] <?> "real value"
+real_value =  choice [real_number_expr, expression, parameter_value, unary_combo] <?> "real value"
 
 unary_combo :: Parser RealExpr
 unary_combo = choice [ordinary_unary_combo, arc_tangent_combo] <?> "unary expression"
@@ -133,3 +130,19 @@ ordinary_unary_combo = choice [ unary "ABS" Abs
 
 unary :: Text -> (RealExpr -> RealExpr) -> Parser RealExpr
 unary name f = f <$> (symbol name *> expression)
+
+negate' :: RN -> RN
+negate' (RN d e) = RN (negate d) e
+
+real_number' :: Parser RN
+real_number' = (option id sign <*>) (s1 <|> s2)
+  where s1 = do
+          c' <- L.decimal
+          option (RN c' 0) (dotDecimal_ c')
+        s2 = dotDecimal_ 0
+        sign = (id <$ char '+') <|> (negate' <$ char '-')
+
+dotDecimal_ :: Integer -> Parser RN
+dotDecimal_ c' = mkNum <$> (char '.' *> takeWhile1P (Just "digit") isDigit)
+  where mkNum t = foldl' step (RN c' 0) t
+        step (RN a e') c = RN (a * 10 + fromIntegral (digitToInt c)) (e' - 1)
