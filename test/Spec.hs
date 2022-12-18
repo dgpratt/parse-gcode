@@ -1,4 +1,3 @@
--- import Test.QuickCheck
 import System.Exit (die)
 import Data.Text ( pack )
 import qualified Data.Text.IO as T
