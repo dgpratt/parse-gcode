@@ -1,31 +1,15 @@
-module Data (Expr (..), RN (..), RealExpr, Line (..), Segment (..)) where
+module Data (UnaryOp (..), BinaryOp (..), Expr (..), RN (..), RealExpr, Line (..), Segment (..)) where
 
 import Data.Text ( Text )
 
+data UnaryOp = Abs | Acos | Asin | Cos | Exp | Fix | Fup | Ln | Round | Sin | Sqrt | Tan deriving (Show, Eq)
+
+data BinaryOp = Atan | Power | Div | Mod | Times | And | Or | Xor | Add | Subtract deriving (Show, Eq)
+
 data Expr v = Value v
             | Param (Expr v)
-            | Abs (Expr v)
-            | Acos (Expr v)
-            | Asin (Expr v)
-            | Cos (Expr v)
-            | Exp (Expr v)
-            | Fix (Expr v)
-            | Fup (Expr v)
-            | Ln (Expr v)
-            | Round (Expr v)
-            | Sin (Expr v)
-            | Sqrt (Expr v)
-            | Tan (Expr v)
-            | Atan (Expr v) (Expr v)
-            | Power (Expr v) (Expr v)
-            | Div (Expr v) (Expr v)
-            | Mod (Expr v) (Expr v)
-            | Times (Expr v) (Expr v)
-            | And (Expr v) (Expr v)
-            | Or (Expr v) (Expr v)
-            | Xor (Expr v) (Expr v)
-            | Add (Expr v) (Expr v)
-            | Subtract (Expr v) (Expr v)
+            | Unary UnaryOp (Expr v)
+            | Binary BinaryOp (Expr v) (Expr v)
             deriving (Show, Eq)
 
 data RN = RN Integer Int deriving (Show)

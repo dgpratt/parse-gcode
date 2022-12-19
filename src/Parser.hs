@@ -55,7 +55,7 @@ mid_line_word :: Parser Segment
 mid_line_word = Word <$> (lexeme mid_line_letter) <*> real_value <?> "word"
 
 arc_tangent_combo :: Parser RealExpr
-arc_tangent_combo = Atan <$> (symbol "ATAN" *> expression) <*> (symbol "/" *> expression) <?> "arctan expression"
+arc_tangent_combo = Binary Atan <$> (symbol "ATAN" *> expression) <*> (symbol "/" *> expression) <?> "arctan expression"
 
 comment :: Parser Segment
 comment = (Comment <$> ordinary_comment) <|> (Message <$> message) <?> "comment"
@@ -111,8 +111,8 @@ binaryOpTable = [ [ binary  "**"   Power ]
                   , binary  "+"    Add
                   , binary  "-"    Subtract ] ]
 
-binary :: Text -> (RealExpr -> RealExpr -> RealExpr) -> Operator Parser RealExpr
-binary name f = InfixL (f <$ symbol name)
+binary :: Text -> BinaryOp -> Operator Parser RealExpr
+binary name op = InfixL (Binary op <$ symbol name)
 
 ordinary_unary_combo :: Parser RealExpr
 ordinary_unary_combo = choice [ unary "ABS" Abs
@@ -128,8 +128,8 @@ ordinary_unary_combo = choice [ unary "ABS" Abs
                               , unary "SQRT" Sqrt
                               , unary "TAN" Tan ]
 
-unary :: Text -> (RealExpr -> RealExpr) -> Parser RealExpr
-unary name f = f <$> (symbol name *> expression)
+unary :: Text -> UnaryOp -> Parser RealExpr
+unary name op = Unary op <$> (symbol name *> expression)
 
 negate' :: RN -> RN
 negate' (RN d e) = RN (negate d) e

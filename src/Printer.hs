@@ -3,6 +3,7 @@
 module Printer (printProgram, printParseResult) where
 
 import Data
+import Data.Char ( toUpper ) 
 import Data.List ( intercalate, splitAt ) 
 import Data.Text ( unpack )
 
@@ -32,33 +33,26 @@ printSegment (Message t) = "( MSG, " ++ unpack t ++ ")"
 printSegment (ParameterSetting t v) = "#" ++ printExpr t ++ "=" ++ printExpr v
 
 printExpr :: RealExpr -> String
-printExpr = prt where
-    fn n e = n ++ "[" ++ printExpr e ++ "]"
-    op n l r = "[" ++ printExpr l ++ " " ++ n ++ " " ++ printExpr r ++ "]"
-    prt (Value v)   = printRealNumber v
-    prt (Param e)   = '#' : printExpr e
-    prt (Abs e)     = fn "ABS" e
-    prt (Acos e)    = fn "ACOS" e
-    prt (Asin e)    = fn "ASIN" e
-    prt (Cos e)     = fn "COS" e
-    prt (Exp e)     = fn "EXP" e
-    prt (Fix e)     = fn "FIX" e
-    prt (Fup e)     = fn "FUP" e
-    prt (Ln e)      = fn "LN" e
-    prt (Round e)   = fn "ROUND" e
-    prt (Sin e)     = fn "SIN" e
-    prt (Sqrt e)    = fn "SQRT" e
-    prt (Tan e)     = fn "TAN" e
-    prt (Atan l r)  = "ATAN[" ++ printExpr l ++ "]/[" ++ printExpr r ++ "]"
-    prt (Power l r) = op "**" l r
-    prt (Div l r)   = op "/" l r
-    prt (Mod l r)   = op "MOD" l r
-    prt (Times l r) = op "*" l r
-    prt (And l r)   = op "AND" l r
-    prt (Or l r)    = op "OR" l r
-    prt (Xor l r)   = op "XOR" l r
-    prt (Add l r)   = op "+" l r
-    prt (Subtract l r) = op "-" l r
+printExpr (Value v)   = printRealNumber v
+printExpr (Param e)   = '#' : printExpr e
+printExpr (Binary Atan l r)  = "ATAN[" ++ printExpr l ++ "]/[" ++ printExpr r ++ "]"
+printExpr (Unary op e)   = printUnaryOp op ++ "[" ++ printExpr e ++ "]"
+printExpr (Binary op l r)   = "[" ++ printExpr l ++ " " ++ printBinaryOp op ++ " " ++ printExpr r ++ "]"
+
+printUnaryOp :: UnaryOp -> String
+printUnaryOp = map toUpper . show
+
+printBinaryOp :: BinaryOp -> String
+printBinaryOp Atan  = "ATAN"
+printBinaryOp Power = "**"
+printBinaryOp Div   = "/"
+printBinaryOp Mod   = "MOD"
+printBinaryOp Times = "*"
+printBinaryOp And   = "AND"
+printBinaryOp Or    = "OR"
+printBinaryOp Xor   = "XOR"
+printBinaryOp Add   = "+"
+printBinaryOp Subtract = "-"
 
 printRealNumber :: RN -> String
 printRealNumber (RN 0 _)         = "0"
