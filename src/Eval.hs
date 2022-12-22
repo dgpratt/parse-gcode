@@ -7,40 +7,40 @@ import Data.Number.CReal ( CReal )
 import Data.Fixed ( mod' )
 import Data.Bits ( (.^.), (.|.), xor )
 
-eval :: RealExpr -> Map.Map Int RN -> RN
-eval (Value v) m       = v
-eval (Param e) m       = let (RN c) = (eval e m) in fromMaybe (RN 0) (Map.lookup (floor c) m)
-eval (Unary op e) m    = let v = (eval e m) in evalUnary op v
-eval (Binary op l r) m = let (lv, rv) = (eval l m, eval r m) in evalBinary op lv rv
+evalExpr :: RealExpr -> Map.Map Int RN -> RN
+evalExpr (Value v) m       = v
+evalExpr (Param e) m       = let (RN c) = (evalExpr e m) in fromMaybe (RN 0) (Map.lookup (floor c) m)
+evalExpr (Unary op e) m    = let v = (evalExpr e m) in evalUnaryExpr op v
+evalExpr (Binary op l r) m = let (lv, rv) = (evalExpr l m, evalExpr r m) in evalBinaryExpr op lv rv
 
-evalUnary :: UnaryOp -> RN -> RN
-evalUnary op = go op where
-    go Abs   = rn abs
-    go Acos  = rn acos
-    go Asin  = rn asin
-    go Cos   = rn cos
-    go Exp   = rn exp
-    go Fix   = rn ( fromIntegral . floor )
-    go Fup   = rn ( fromIntegral . ceiling )
-    go Ln    = rn log
-    go Round = rn ( fromIntegral . round )
-    go Sin   = rn sin
-    go Sqrt  = rn sqrt
-    go Tan   = rn tan
-    rn f = RN . f . unRn
+evalUnaryExpr :: UnaryOp -> RN -> RN
+evalUnaryExpr = eval where
+    eval Abs   = rnEval abs
+    eval Acos  = rnEval acos
+    eval Asin  = rnEval asin
+    eval Cos   = rnEval cos
+    eval Exp   = rnEval exp
+    eval Fix   = rnEval ( fromIntegral . floor )
+    eval Fup   = rnEval ( fromIntegral . ceiling )
+    eval Ln    = rnEval log
+    eval Round = rnEval ( fromIntegral . round )
+    eval Sin   = rnEval sin
+    eval Sqrt  = rnEval sqrt
+    eval Tan   = rnEval tan
+    rnEval f = RN . f . unRn
 
-evalBinary :: BinaryOp -> RN -> RN -> RN
-evalBinary op (RN l) (RN r) = go op where
-    go Atan     = rn atan2
-    go Power    = rn (**)
-    go Div      = rn (/)
-    go Mod      = rn mod'
-    go Times    = rn (*)
-    go And      = rn' (.^.)
-    go Or       = rn' (.|.)
-    go Xor      = rn' xor
-    go Add      = rn (+)
-    go Subtract = rn (-)
-    rn f = RN (f l r)
-    rn' :: (Int -> Int -> Int) -> RN
-    rn' f = RN . fromIntegral $ (f (floor l) (floor r))
+evalBinaryExpr :: BinaryOp -> RN -> RN -> RN
+evalBinaryExpr op (RN l) (RN r) = eval op where
+    eval Atan     = rnEval atan2
+    eval Power    = rnEval (**)
+    eval Div      = rnEval (/)
+    eval Mod      = rnEval mod'
+    eval Times    = rnEval (*)
+    eval And      = rnEval' (.^.)
+    eval Or       = rnEval' (.|.)
+    eval Xor      = rnEval' xor
+    eval Add      = rnEval (+)
+    eval Subtract = rnEval (-)
+    rnEval f = RN (f l r)
+    rnEval' :: (Int -> Int -> Int) -> RN
+    rnEval' f = RN . fromIntegral $ (f (floor l) (floor r))
