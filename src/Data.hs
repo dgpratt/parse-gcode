@@ -1,6 +1,7 @@
 module Data (UnaryOp (..), BinaryOp (..), Expr (..), RN (..), RealExpr, Line (..), Segment (..)) where
 
 import Data.Text ( Text )
+import Data.Number.CReal (CReal)
 
 data UnaryOp = Abs | Acos | Asin | Cos | Exp | Fix | Fup | Ln | Round | Sin | Sqrt | Tan deriving (Show, Eq)
 
@@ -12,11 +13,7 @@ data Expr v = Value v
             | Binary BinaryOp (Expr v) (Expr v)
             deriving (Show, Eq)
 
-data RN = RN Integer Int deriving (Show)
-
-instance Eq RN where
-    (RN 0 _) == (RN 0 _)   = True
-    (RN d e) == (RN d' e') = d == d' && e == e'
+newtype RN = RN { unRn :: CReal } deriving (Show, Eq)
 
 type RealExpr = Expr RN
 

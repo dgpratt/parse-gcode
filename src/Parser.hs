@@ -6,6 +6,7 @@ import Control.Applicative hiding (many, some)
 import Data.Text ( Text, foldl' )
 import Data.Void ( Void )
 import Data.Char ( isPrint, toUpper, isDigit, digitToInt )
+import Data.Ratio ((%))
 
 import Text.Megaparsec
 import Text.Megaparsec.Char ( char, char', eol, hspace )
@@ -89,7 +90,7 @@ parameter_value :: Parser RealExpr
 parameter_value =  symbol "#" *> (Param <$> parameter_index) <?> "parameter value"
 
 real_number_expr :: Parser RealExpr
-real_number_expr = Value <$> lexeme real_number' <?> "real number"
+real_number_expr = Value <$> lexeme real_number <?> "real number"
           
 real_value :: Parser RealExpr
 real_value =  choice [real_number_expr, expression, parameter_value, unary_combo] <?> "real value"
@@ -131,18 +132,23 @@ ordinary_unary_combo = choice [ unary "ABS" Abs
 unary :: Text -> UnaryOp -> Parser RealExpr
 unary name op = Unary op <$> (symbol name *> expression)
 
-negate' :: RN -> RN
-negate' (RN d e) = RN (negate d) e
+negate' :: (Integer, Int) -> (Integer, Int)
+negate' (d, e) = (negate d, e)
 
-real_number' :: Parser RN
+real_number :: Parser RN
+real_number = do
+  (d, e) <- real_number'
+  return $ RN (encodeFloat d e)
+
+real_number' :: Parser (Integer, Int)
 real_number' = (option id sign <*>) (s1 <|> s2)
   where s1 = do
           c' <- L.decimal
-          option (RN c' 0) (dotDecimal_ c')
+          option (c', 0) (dotDecimal_ c')
         s2 = dotDecimal_ 0
         sign = (id <$ char '+') <|> (negate' <$ char '-')
 
-dotDecimal_ :: Integer -> Parser RN
+dotDecimal_ :: Integer -> Parser (Integer, Int)
 dotDecimal_ c' = mkNum <$> (char '.' *> takeWhile1P (Just "digit") isDigit)
-  where mkNum t = foldl' step (RN c' 0) t
-        step (RN a e') c = RN (a * 10 + fromIntegral (digitToInt c)) (e' - 1)
+  where mkNum t = foldl' step (c', 0) t
+        step (a, e') c = ((a * 10 + fromIntegral (digitToInt c)), (e' - 1))
