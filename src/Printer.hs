@@ -55,14 +55,7 @@ printBinaryOp Add   = "+"
 printBinaryOp Subtract = "-"
 
 printRealNumber :: RN -> String
-printRealNumber (RN 0 _)         = "0"
-printRealNumber (RN d 0)         = show d
-printRealNumber (RN d e) | d < 0 = "-" ++ printRealNumber (RN (-d) e)
-printRealNumber (RN d e)         =
-    if p == 0 then "0." ++ r else l ++ "." ++ r
-    where s     = show d
-          p     = (length s) + e
-          (l,r) = splitAt p s
+printRealNumber (RN d) = show d
 
 padLeft :: a -> Int -> [a] -> [a]
 padLeft c n s = replicate (n - length s) c ++ s
