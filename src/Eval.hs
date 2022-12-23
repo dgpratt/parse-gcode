@@ -9,8 +9,8 @@ import Data.Bits ( (.^.), (.|.), xor )
 
 evalExpr :: RealExpr -> Map.Map Int RN -> RN
 evalExpr (Value v) m       = v
-evalExpr (Param e) m       = let (RN c) = (evalExpr e m) in fromMaybe (RN 0) (Map.lookup (floor c) m)
-evalExpr (Unary op e) m    = let v = (evalExpr e m) in evalUnaryExpr op v
+evalExpr (Param e) m       = let v = evalExpr e m in Map.lookup (toInt v) m `orElse` RN 0
+evalExpr (Unary op e) m    = let v = evalExpr e m in evalUnaryExpr op v
 evalExpr (Binary op l r) m = let (lv, rv) = (evalExpr l m, evalExpr r m) in evalBinaryExpr op lv rv
 
 evalUnaryExpr :: UnaryOp -> RN -> RN
@@ -44,3 +44,9 @@ evalBinaryExpr op (RN l) (RN r) = eval op where
     rnEval f = RN (f l r)
     rnEval' :: (Int -> Int -> Int) -> RN
     rnEval' f = RN . fromIntegral $ (f (floor l) (floor r))
+
+orElse :: Maybe a -> a -> a
+orElse = flip fromMaybe
+
+toInt :: RN -> Int
+toInt = floor . unRn
