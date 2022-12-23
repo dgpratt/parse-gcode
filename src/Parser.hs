@@ -138,7 +138,7 @@ negate' (d, e) = (negate d, e)
 real_number :: Parser RN
 real_number = do
   (d, e) <- real_number'
-  return $ RN (encodeFloat d e)
+  return $ RN (fromInteger d * 10**(fromIntegral e))
 
 real_number' :: Parser (Integer, Int)
 real_number' = (option id sign <*>) (s1 <|> s2)

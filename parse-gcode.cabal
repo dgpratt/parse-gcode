@@ -22,7 +22,7 @@ maintainer:         1676341+dgpratt@users.noreply.github.com
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  Data, Parser, Printer
+    exposed-modules:  Data, Parser, Printer, Eval, Interpreter
 
     -- Modules included in this library but not exported.
     -- other-modules:
