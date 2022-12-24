@@ -4,8 +4,6 @@ import Data
 import qualified Data.Map.Strict as Map
 import Data.Maybe ( fromMaybe )
 import Data.Number.CReal ( CReal )
--- import Data.Fixed ( mod' )
-import Data.Bits ( (.^.), (.|.), xor )
 
 type Variables = Map.Map Int RN
 
@@ -38,14 +36,14 @@ evalBinaryExpr op (RN l) (RN r) = eval op where
     eval Div      = rnEval (/)
     eval Mod      = rnEval mod'
     eval Times    = rnEval (*)
-    eval And      = rnEval' (.^.)
-    eval Or       = rnEval' (.|.)
-    eval Xor      = rnEval' xor
+    eval And      = rnEval' (&&)
+    eval Or       = rnEval' (||)
+    eval Xor      = rnEval' (/=)
     eval Add      = rnEval (+)
     eval Subtract = rnEval (-)
     rnEval f = RN (f l r)
-    rnEval' :: (Int -> Int -> Int) -> RN
-    rnEval' f = RN . fromIntegral $ (f (floor l) (floor r))
+    rnEval' :: (Bool -> Bool -> Bool) -> RN
+    rnEval' f = RN . btr $ (f (rtb l) (rtb r))
 
 div' :: CReal -> CReal -> Int
 div' n d = floor (n / d)
@@ -83,3 +81,11 @@ acos_d = rtd . acos
 
 atan2_d :: CReal -> CReal -> CReal
 atan2_d = (rtd .) . atan2
+
+rtb :: CReal -> Bool
+rtb 0 = False
+rtb _ = True
+
+btr :: Bool -> CReal
+btr False = 0
+btr True  = 1
