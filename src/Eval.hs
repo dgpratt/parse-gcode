@@ -58,34 +58,44 @@ orElse = flip fromMaybe
 toInt :: RN -> Int
 toInt = floor . unRn
 
+-- | Convert degrees to radians
 dtr :: CReal -> CReal
 dtr d = (d * pi) / 180
 
+-- | Convert radians to degrees
 rtd :: CReal -> CReal
 rtd r = (r * 180) / pi
 
+-- | Sine on degrees
 sin_d :: CReal -> CReal
 sin_d = sin . dtr
 
+-- | Cosine on degrees
 cos_d :: CReal -> CReal
 cos_d = cos . dtr
 
+-- | Tangent on degrees
 tan_d :: CReal -> CReal
 tan_d = tan . dtr
 
+-- | Arc Sine on degrees
 asin_d :: CReal -> CReal
 asin_d = rtd . asin
 
+-- | Arc Cosine on degrees
 acos_d :: CReal -> CReal
 acos_d = rtd . acos
 
+-- | Arc Tangent on degrees
 atan2_d :: CReal -> CReal -> CReal
 atan2_d = (rtd .) . atan2
 
+-- | Real to Bool
 rtb :: CReal -> Bool
 rtb 0 = False
 rtb _ = True
 
+-- | Bool to Real
 btr :: Bool -> CReal
 btr False = 0
 btr True  = 1
