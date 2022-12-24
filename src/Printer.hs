@@ -9,6 +9,7 @@ import Data.Text ( unpack )
 
 import Data.Text ( Text )
 import Data.Void ( Void )
+import Data.Number.CReal ( showCReal )
 import Text.Megaparsec (errorBundlePretty)
 import Text.Megaparsec.Error (ParseErrorBundle)
 
@@ -55,7 +56,7 @@ printBinaryOp Add   = "+"
 printBinaryOp Subtract = "-"
 
 printRealNumber :: RN -> String
-printRealNumber (RN d) = show d
+printRealNumber (RN d) = showCReal 4 d
 
 padLeft :: a -> Int -> [a] -> [a]
 padLeft c n s = replicate (n - length s) c ++ s
